@@ -10,7 +10,10 @@ class OwnerList extends Component{
             owners:[],
             currentPage: 0, 
             pageCount: 1, 
-            error:''
+            error:"",
+            editingOwner:null,
+            updatedName:"",
+            updatedGym:"",
         };
     }
     componentDidMount(){
@@ -38,39 +41,123 @@ class OwnerList extends Component{
         });
       };
 
+      /*** Enable Editing Mode ***/
+      startEditing = (owner) => {
+        this.setState({
+        editingOwner: owner.id,
+        updatedName: owner.name,
+        updatedGym: owner.gym,
+    });
+  };
+
+  /*** Handle Input Change ***/
+  handleChange = (event) => {
+    this.setState({ [event.target.name]: event.target.value });
+  };
+
+  /*** Handle PUT Request ***/
+  updateOwner = (id) => {
+    const { updatedName,updatedGym } = this.state;
+    axios
+      .put(`https://localhost:7296/api/Owner/${id}`, {
+        id: id,
+        name: updatedName,
+        gym: updatedGym
+      })
+      .then((response) => {
+        console.log("Updated successfully:", response.data);
+        this.setState({
+            editingOwner: null, // Exit editing mode
+            updatedName: "",
+            updatedGym: "",
+
+        });
+        this.fetchOwners(this.state.currentPage + 1); // Refresh data
+      })
+      .catch((error) => {
+        console.error("Error updating owner:", error.message);
+        this.setState({ errorMsg: "Error updating owner" });
+      });
+  };
 
  
-    render(){
-        const{owners, errorMsg, pageCount} = this.state;
-        
-        return(
-            <div className="container">
-                <h2 className="text-center my-4">List of Owners</h2>
-                
-                
-                {
-                    owners.length >0 ?
-                    (owners.map(owner =><div key = {owner.id}><h3>{owner.id} - {owner.name} - {owner.gym}</h3></div>)) :
-                    (<p>No owners found</p>)
-                }
-                
-                {errorMsg && <div className="alert alert-danger">{errorMsg}</div>}
+  render()
+  {
+      const{owners, errorMsg, pageCount,editingOwner,updatedName,updatedGym} = this.state;
+      
+      return(
+          <div className="container">
+              <h2 className="text-center my-4">List of Owners</h2>
+              
+              <div className='row'>
+                  {owners.length>0?(
+                      owners.map((owner)=>(
+                          <div key={owner.id} className="col-md-4">
+                              <div className="card owner-card">
+                                  <div className="card-body">
+                                      {editingOwner=== owner.id?(
+                                          <>
+                                              <input
+                                                  type="text"
+                                                  className="form-control mb-2"
+                                                  name="updatedName"
+                                                  value={updatedName}
+                                                  onChange={this.handleChange}
+                                              />
+                                              <input
+                                                  type="text"
+                                                  className="form-control mb-2"
+                                                  name="updatedGym"
+                                                  value={updatedGym}
+                                                  onChange={this.handleChange}
+                                                  
+                                              />
+                                              <button className="btn btn-success btn-sm me-2" onClick={() => this.updateOwner(owner.id)}>
+                                                  Save
+                                              </button>
+                                              <button className="btn btn-secondary btn-sm" onClick={() => this.setState({ editingOwner: null })}>
+                                                  Cancel
+                                              </button>
+                                          </>
+                                      ) : (
+                                          <>
+                                              <h5 className="card-title">{owner.name}</h5>
+                                              <h5 className="card-title">{owner.gym}</h5>
+                                              
+                                              <button className="btn btn-primary btn-sm mt-2" onClick={() => this.startEditing(owner)}>
+                                                  Edit
+                                              </button>
+                                          </>
+                                      )}
+                                  </div>
+                              </div>
+                          </div>
+                      ))
+                  ) : (
+                      <p className="text-center">No owner found</p>
+                  )}
+              </div>
+                      
+              {errorMsg && <div className="alert alert-danger">{errorMsg}</div>}
 
-                <ReactPaginate
-                    previousLabel={"Previous"}
-                    nextLabel={"Next"}
-                    breakLabel={"..."}
-                    pageCount={pageCount}
-                    marginPagesDisplayed={2}
-                    pageRangeDisplayed={3}
-                    onPageChange={this.handlePageClick}
-                    containerClassName={"pagination"}
-                    activeClassName={"active"}
-                />
-                
-            </div>
-        )
-    }
-    
-}
+              <div className="pagination-container">
+                  
+                  <ReactPaginate
+                      previousLabel={"Previous"}
+                      nextLabel={"Next"}
+                      breakLabel={"..."}
+                      pageCount={pageCount}
+                      marginPagesDisplayed={2}
+                      pageRangeDisplayed={3}
+                      onPageChange={this.handlePageClick}
+                      containerClassName={"pagination"}
+                      activeClassName={"active"}
+                      renderOnZeroPageCount={null} 
+                  />
+                  
+              </div>
+          </div>
+      );
+  }
+} 
 export default OwnerList

@@ -136,6 +136,7 @@ class CategoryList extends Component {
             onPageChange={this.handlePageClick}
             containerClassName={"pagination"}
             activeClassName={"active"}
+            renderOnZeroPageCount={null}
           />
         </div>
       </div>
