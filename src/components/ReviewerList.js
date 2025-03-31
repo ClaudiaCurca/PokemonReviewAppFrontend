@@ -1,18 +1,24 @@
-import React, {Component ,useState, useEffect} from 'react'
+import React, {Component} from 'react'
 import axios from'axios'
 import ReactPaginate from "react-paginate";
 import "./ReviewerStyle.css"; 
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 class ReviewerList extends Component{
     constructor(props){
         super(props)
         this.state = {
             reviewers:[],
+            editingReviewer: null,
+            addingReviewer:false,
+            updatedFirstName:"",
+            updatedLastName:"",
+            firstName:"",
+            lastName:"",
             currentPage: 0,
             pageCount: 1,
             error:"",
-            editingReviewer: null,
-            updatedFirstName:"",
-            updatedLastName:"",
         };
     }
     componentDidMount(){
@@ -34,27 +40,57 @@ class ReviewerList extends Component{
             this.setState({ errorMsg: "Error retrieving data" });
           });
       };
-      handlePageClick = ({ selected }) => {
-        this.setState({ currentPage: selected }, () => {
-        this.fetchReviewer(selected + 1); 
-        });
-      };
 
-      /*** Enable Editing Mode ***/
-        startEditing = (reviewer) => {
-        this.setState({
-        editingReviewer: reviewer.id,
-        updatedLastName: reviewer.lastName,
-        updatedFirstName: reviewer.firstName,
-    });
+      handlePageClick = ({ selected }) => 
+        {
+            this.setState({ currentPage: selected }, () => {
+            this.fetchReviewer(selected + 1); 
+            });
+        };
+
+
+        startEditing = (reviewer) => 
+        {
+            this.setState({
+            editingReviewer: reviewer.id,
+            updatedLastName: reviewer.lastName,
+            updatedFirstName: reviewer.firstName,
+            });
+        };
+
+        startAdding = () =>
+        {
+            this.setState
+            ({
+                addingReviewer:true,
+                editingReviewer:null,
+                firstName:"",
+                lastName:"",
+            });
+        };
+
+  handleChange = (e) => {
+    this.setState({ [e.target.name]: e.target.value });
   };
 
-  /*** Handle Input Change ***/
-  handleChange = (event) => {
-    this.setState({ [event.target.name]: event.target.value });
-  };
+  addReviewer = async(e) => {
+    const { firstName, lastName} = this.state;
+    
+    try{
+    await axios.post("https://localhost:7296/api/Reviewer",{firstName,lastName});
+            toast.success("Data added successfully!");
+            this.setState({
+                firstName:"",
+                lastName:"",
+            });
 
-  /*** Handle PUT Request ***/
+        this.fetchReviewer(this.state.currentPage + 1);
+    } catch (error) {
+        toast.error("Error adding data!");
+        console.error("Error adding Reviewer:", error);
+    }
+};
+
   updateReviewer = (id) => {
     const { updatedLastName,updatedFirstName } = this.state;
     axios
@@ -63,10 +99,9 @@ class ReviewerList extends Component{
         lastName: updatedLastName,
         firstName: updatedFirstName
       })
-      .then((response) => {
-        console.log("Updated successfully:", response.data);
+      .then(() => {
         this.setState({
-            editingReviewer: null, // Exit editing mode
+            editingReviewer: null,
             updatedFirstName: "",
             updatedLastName: "",
 
@@ -74,19 +109,34 @@ class ReviewerList extends Component{
         this.fetchReviewer(this.state.currentPage + 1); // Refresh data
       })
       .catch((error) => {
-        console.error("Error updating category:", error.message);
-        this.setState({ errorMsg: "Error updating category" });
+        toast.error("Error adding data!");
+        console.error("Error updating reviewer:", error);
+        
       });
   };
     render()
     {
-        const{reviewers, errorMsg, pageCount,editingReviewer,updatedFirstName,updatedLastName} = this.state;
+        const{reviewers, pageCount, editingReviewer, updatedFirstName, updatedLastName, addingReviewer,firstName,lastName} = this.state;
         
         return(
             <div className="container">
-                <h2 className="text-center my-4">List of Reviewers</h2>
+                <h2 className="text-center my-4">Reviewers</h2>
                 
                 <div className='row'>
+                {addingReviewer && (
+                        <div className="col-md-4">
+                            <div className="card reviewer-card">
+                                <div className="card-body">
+                                    <h5 className="card-title">Add New Reviewer</h5>
+                                    <input type="text" className="form-control mb-2" name="firstName" placeholder="First Name" value={firstName} onChange={this.handleChange} />
+                                    <input type="text" className="form-control mb-2" name="lastName" placeholder="Last Name" value={lastName} onChange={this.handleChange} />
+                                    <button className="btn btn-success btn-sm me-2" onClick={this.addReviewer}>Add</button>
+                                    <button className="btn btn-secondary btn-sm" onClick={() => this.setState({ addingReviewer: false })}>Cancel</button>
+                                </div>
+                            </div>
+                        </div> 
+                    )}
+
                     {reviewers.length>0?(
                         reviewers.map((reviewer)=>(
                             <div key={reviewer.id} className="col-md-4">
@@ -128,17 +178,14 @@ class ReviewerList extends Component{
                                         )}
                                     </div>
                                 </div>
+                                <ToastContainer position="top-right" autoClose={3000} />
                             </div>
                         ))
                     ) : (
                         <p className="text-center">No reviewer found</p>
                     )}
                 </div>
-                        
-                {errorMsg && <div className="alert alert-danger">{errorMsg}</div>}
-
                 <div className="pagination-container">
-                    
                     <ReactPaginate
                         previousLabel={"Previous"}
                         nextLabel={"Next"}
@@ -152,6 +199,9 @@ class ReviewerList extends Component{
                         renderOnZeroPageCount={null} 
                     />
                     
+                </div>
+                <div className="add-button-container">
+                    <button className="btn btn-success mb-3" onClick={this.startAdding}>Add Reviewer</button>
                 </div>
             </div>
         );
