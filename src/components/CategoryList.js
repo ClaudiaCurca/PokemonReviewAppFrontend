@@ -2,17 +2,21 @@ import React, { Component } from "react";
 import axios from "axios";
 import ReactPaginate from "react-paginate";
 import "./CategoryStyle.css"; 
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 class CategoryList extends Component {
   constructor(props) {
     super(props);
     this.state = {
       categories: [],
+      editingCategory: null, 
+      addingCategory:false,
+      name:"",
+      updatedName: "", 
       currentPage: 0,
       pageCount: 1,
       error: "",
-      editingCategory: null, // ID of the category being edited
-      updatedName: "", // Updated category name
     };
   }
 
@@ -42,20 +46,48 @@ class CategoryList extends Component {
     });
   };
 
-  /*** Enable Editing Mode ***/
-  startEditing = (category) => {
-    this.setState({
-      editingCategory: category.id,
-      updatedName: category.name,
-    });
-  };
+  startEditing = (category) => 
+    {
+      this.setState
+      ({
+        editingCategory: category.id,
+        updatedName: category.name,
+      });
+    };
 
-  /*** Handle Input Change ***/
-  handleChange = (event) => {
-    this.setState({ updatedName: event.target.value });
-  };
+  startAdding = () =>
+    {
+      this.setState
+      ({
+        addingCategory:true,
+        editingCategory:null,
+        name: "",
+      });
+    }
 
-  /*** Handle PUT Request ***/
+
+  handleChange = (e) => {
+    this.setState({ [e.target.name]: e.target.value });
+  };
+  addCategory = async(e) => {
+    const { name} = this.state;
+    
+    try{
+    await axios.post("https://localhost:7296/api/Category",{name});
+            toast.success("Data added successfully!");
+            this.setState({
+                name:"",
+            });
+
+        this.fetchCategory(this.state.currentPage + 1);
+    } catch (error) {
+        toast.error("Error adding data!");
+        console.error("Error adding Category:", error);
+    }
+};
+
+
+
   updateCategory = (id) => {
     const { updatedName } = this.state;
     axios
@@ -78,14 +110,30 @@ class CategoryList extends Component {
   };
 
   render() {
-    const { categories, errorMsg, pageCount, editingCategory, updatedName } =
+    const { categories, errorMsg, pageCount, addingCategory, editingCategory, updatedName, name } =
       this.state;
 
     return (
       <div className="container">
-        <h2 className="text-center my-4">List of Categories</h2>
+         <h1 className="text-center my-4">Pokemon Categories</h1>
         
         <div className="row">
+
+        {addingCategory && (
+            <div className="col-md-4">
+              <div className="card category-card">
+                <div className="card-body">
+                  <h5 className="card-title">Add New Category</h5>
+                  <input type="text" className="form-control mb-2" name="name" placeholder="Name" value={name} onChange={this.handleChange} />
+                  <button className="btn btn-success btn-sm me-2" onClick={this.addCategory}>Add</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => this.setState({ addingCategory: false })}>Cancel</button>
+                </div>
+              </div>
+                <ToastContainer position="top-right" autoClose={3000} />
+            </div>
+                        
+          )}
+
           {categories.length > 0 ? (
             categories.map((category) => (
               <div key={category.id} className="col-md-4">
@@ -121,6 +169,7 @@ class CategoryList extends Component {
           ) : (
             <p className="text-center">No categories found</p>
           )}
+          
         </div>
 
         {errorMsg && <div className="alert alert-danger">{errorMsg}</div>}
@@ -138,6 +187,9 @@ class CategoryList extends Component {
             activeClassName={"active"}
             renderOnZeroPageCount={null}
           />
+        </div>
+        <div className="add-button-container">
+          <button className="btn btn-success mb-3" onClick={this.startAdding}>Add Category</button>
         </div>
       </div>
     );

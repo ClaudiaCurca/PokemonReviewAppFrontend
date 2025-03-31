@@ -2,18 +2,24 @@ import React, {Component ,useState, useEffect} from 'react'
 import axios from'axios'
 import ReactPaginate from "react-paginate";
 import "./OwnerStyle.css"; 
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 class OwnerList extends Component{
     constructor(props){
         super(props)
         this.state = {
             owners:[],
+            addingOwner:false,
+            editingOwner:null,
+            name:"",
+            gym:"",
+            countryId:"",
+            updatedName:"",
+            updatedGym:"",
             currentPage: 0, 
             pageCount: 1, 
             error:"",
-            editingOwner:null,
-            updatedName:"",
-            updatedGym:"",
         };
     }
     componentDidMount(){
@@ -41,28 +47,58 @@ class OwnerList extends Component{
         });
       };
 
-      /*** Enable Editing Mode ***/
-      startEditing = (owner) => {
-        this.setState({
-        editingOwner: owner.id,
-        updatedName: owner.name,
-        updatedGym: owner.gym,
-    });
+      startEditing = (owner) => 
+        {
+            this.setState({
+            editingOwner: owner.id,
+            updatedName: owner.name,
+            updatedGym: owner.gym,
+            });
+        };
+
+
+        startAdding = () =>
+        {
+            this.setState({
+                addingOwner: true,
+                editingOwner: null,
+                name:"",
+                gym:"",
+                countryId:"",
+            });
+        };
+
+  handleChange = (e) => {
+    this.setState({ [e.target.name]: e.target.value });
   };
 
-  /*** Handle Input Change ***/
-  handleChange = (event) => {
-    this.setState({ [event.target.name]: event.target.value });
-  };
+  addOwner = async(e) => {
+    const { name, gym, countryId} = this.state;
+    
+    try{
+    await axios.post("https://localhost:7296/api/Owner",{name,gym},{params:{countryId}});
+            toast.success("Data added successfully!");
+            this.setState({
+                name:"",
+                ownerId:"",
+                countryId:""
+            });
 
-  /*** Handle PUT Request ***/
+        this.fetchPokemons(this.state.currentPage + 1);
+    } catch (error) {
+        toast.error("Error adding data!");
+        console.error("Error adding Owner:", error);
+    }
+};
+
+
   updateOwner = (id) => {
     const { updatedName,updatedGym } = this.state;
     axios
       .put(`https://localhost:7296/api/Owner/${id}`, {
         id: id,
         name: updatedName,
-        gym: updatedGym
+        gym: updatedGym,
       })
       .then((response) => {
         console.log("Updated successfully:", response.data);
@@ -83,13 +119,29 @@ class OwnerList extends Component{
  
   render()
   {
-      const{owners, errorMsg, pageCount,editingOwner,updatedName,updatedGym} = this.state;
+      const{owners, pageCount,editingOwner,updatedName,updatedGym, name, gym,addingOwner,countryId} = this.state;
       
       return(
           <div className="container">
               <h2 className="text-center my-4">List of Owners</h2>
               
               <div className='row'>
+
+                   {addingOwner && (
+                        <div className="col-md-4">
+                            <div className="card pokemon-card">
+                                <div className="card-body">
+                                    <h5 className="card-title">Add New Owner</h5>
+                                    <input type="text" className="form-control mb-2" name="name" placeholder="Name" value={name} onChange={this.handleChange} />
+                                    <input type="text" className="form-control mb-2" name="gym" placeholder="Gym Name" value={gym} onChange={this.handleChange} />
+                                    <input type="text" className="form-control mb-2" name="countryId" placeholder="Country ID" value={countryId} onChange={this.handleChange} />
+                                    <button className="btn btn-success btn-sm me-2" onClick={this.addOwner}>Add</button>
+                                    <button className="btn btn-secondary btn-sm" onClick={() => this.setState({ addingOwner: false })}>Cancel</button>
+                                </div>
+                            </div>
+                              <ToastContainer position="top-right" autoClose={3000} />
+                            </div> 
+                    )}
                   {owners.length>0?(
                       owners.map((owner)=>(
                           <div key={owner.id} className="col-md-4">
@@ -131,6 +183,7 @@ class OwnerList extends Component{
                                       )}
                                   </div>
                               </div>
+                               <ToastContainer position="top-right" autoClose={3000} />
                           </div>
                       ))
                   ) : (
@@ -138,8 +191,6 @@ class OwnerList extends Component{
                   )}
               </div>
                       
-              {errorMsg && <div className="alert alert-danger">{errorMsg}</div>}
-
               <div className="pagination-container">
                   
                   <ReactPaginate
@@ -156,6 +207,9 @@ class OwnerList extends Component{
                   />
                   
               </div>
+              <div className="add-button-container">
+                    <button className="btn btn-success mb-3" onClick={this.startAdding}>Add Owner</button>
+                </div>
           </div>
       );
   }

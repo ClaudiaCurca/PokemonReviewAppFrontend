@@ -18,4 +18,9 @@
     justify-content: center;
     margin-top: 20px;
   }
+  .add-button-container {
+    display: flex;
+    justify-content:  flex-end;
+    margin-bottom: 15px;
+  }
   

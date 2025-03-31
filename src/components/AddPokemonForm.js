@@ -28,9 +28,6 @@ import "react-toastify/dist/ReactToastify.css";
             toast.error("Error adding data!");
             console.error("Error:", error);
         }
-    
-
-        
     }
 
     render(){

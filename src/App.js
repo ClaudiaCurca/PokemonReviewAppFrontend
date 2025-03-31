@@ -9,7 +9,6 @@ import AddPokemonForm from './components/AddPokemonForm';
 import ReviewList from './components/ReviewList';
 import ReviewerList from './components/ReviewerList';
 import CategoryList from './components/CategoryList';
-import AddNewData from './components/AddNewData';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import AddCategoryForm from './components/AddCategoryForm';
@@ -49,10 +48,6 @@ function App() {
               <Link to ="/categoryList">Categories</Link>
               </li>
 
-              <li className="nav-item me-3">
-              <Link to ="/addNewData">Add Data</Link>
-              </li>
-
             </ul>
 
           </nav>
@@ -64,7 +59,6 @@ function App() {
             <Route path="/reviewList" element={<ReviewList/>}/>
             <Route path="/reviewerList" element = {<ReviewerList/>}/>
             <Route path="/categoryList" element = {<CategoryList/>}/>
-            <Route path="/addNewData" element={<AddNewData/>} />
             <Route path="/addPokemonForm" element={<AddPokemonForm/>} />
             <Route path="/addCategoryForm" element={<AddCategoryForm/>} />
             <Route path="/addCountryForm" element={<AddCountryForm/>} />
